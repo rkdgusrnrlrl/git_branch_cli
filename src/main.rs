@@ -12,15 +12,12 @@ fn cli() -> Command {
         .arg_required_else_help(true)
         .allow_external_subcommands(true)
         .subcommand(
-            Command::new("delete_branch")
-                .about("Delete Local Branch")
-                .arg(arg!(<PATH> "local repo path"))
-                .arg_required_else_help(true),
+            Command::new("delete")
+                .about("Delete Local Branch"),
         )
         .subcommand(
             Command::new("recommend")
                 .about("recommend stage or release branch name")
-                .arg(arg!(<PATH> "local repo path"))
                 .arg(arg!(<STAGE> "stage"))
                 .arg_required_else_help(true),
         )
@@ -30,7 +27,7 @@ fn main() {
     let matches = cli().get_matches();
     match matches.subcommand() {
         Some(("recommend", sub_matches)) => {
-            let path = sub_matches.get_one::<String>("PATH").expect("required");
+            let path = &String::from(".");
             let stage = sub_matches.get_one::<String>("STAGE").expect("required");
             let absolut_path = get_absolute_path(path);
             let branch_name = git::get_remote_last_branch(&absolut_path, stage);
@@ -49,8 +46,8 @@ fn main() {
                 }
             }
         }
-        Some(("delete_branch", sub_matches)) => {
-            let path = sub_matches.get_one::<String>("PATH").expect("required");
+        Some(("delete", _sub_matches)) => {
+            let path = &String::from(".");
             let absolut_path = get_absolute_path(path);
             if !git::check_git_exist(&absolut_path) {
                 panic!("{} not a git repository", path)
