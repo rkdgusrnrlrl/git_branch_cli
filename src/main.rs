@@ -68,7 +68,7 @@ fn get_absolute_path(path: &String) -> String {
 
 
 fn multi_select(options: Vec<git::GitBranch>, path: &str) {
-    let formatter: MultiOptionFormatter<git::GitBranch> = &|a| format!("{} different fruits", a.len());
+    let formatter: MultiOptionFormatter<git::GitBranch> = &|a| format!("{} selected branch", a.len());
 
     let ans = MultiSelect::new("Select branch list to delete:", options)
         .with_formatter(formatter)
