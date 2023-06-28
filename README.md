@@ -1,6 +1,9 @@
 # git branch cli
 git 브랜치 관련 쉘 스크립트 코드를 대체 하기 위해 만듬
 
+## require
+- git 설치
+
 ## sub command
 ### delete
 - 로컬 브랜치에서 삭제할 브랜치를 선택해 삭제 할 수 있도록함
