@@ -3,6 +3,7 @@ use std::fmt::Display;
 use std::process::Command;
 
 
+
 pub struct GitBranch {
     pub name: String,
     pub committerdate: NaiveDateTime,
@@ -67,14 +68,14 @@ pub fn get_branches(path: &str) -> Vec<GitBranch> {
 }
 
 
-pub fn get_remote_last_branch(path: &str, stage: &str) -> Option<String> {
-    let format_arg = format!("refs/heads/{stage}*", stage = stage);
+pub fn get_remote_last_branch(path: &str, filter_format: &str) -> Option<String> {
+    
     let output = Command::new("git")
         .current_dir(path)
         .arg("ls-remote")
         .arg("--sort=-v:refname")
         .arg("origin")
-        .arg(format_arg)
+        .arg(filter_format)
         .output()
         .expect("failed to execute process");
     let out_str = String::from_utf8(output.stdout).unwrap();

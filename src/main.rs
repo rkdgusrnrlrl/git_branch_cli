@@ -30,7 +30,17 @@ fn main() {
             let path = &String::from(".");
             let stage = sub_matches.get_one::<String>("STAGE").expect("required");
             let absolut_path = get_absolute_path(path);
-            let branch_name = git::get_remote_last_branch(&absolut_path, stage);
+            let now: DateTime<Local> = Local::now();
+            let yymmdd = now.format("%Y%m%d");
+            let filter_format = format!(
+                "refs/heads/{stage}/{yymmdd}*",
+                stage = stage,
+                yymmdd = yymmdd
+            );
+            let branch_name = git::get_remote_last_branch(
+                &absolut_path, 
+                filter_format.as_str()
+            );
             match branch_name {
                 Some(branch_name) => {
                     let new_branch_name = branch_name.replace("refs/heads/", "");
