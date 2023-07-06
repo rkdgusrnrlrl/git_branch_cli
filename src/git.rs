@@ -33,6 +33,10 @@ pub fn delete_git_branch(path: &str, branch: &str) -> bool {
         .arg(branch)
         .output()
         .expect("failed to execute process");
+    if !output.stderr.is_empty() {
+        println!("\x1b[93m{}\x1b[0m", String::from_utf8(output.stderr).unwrap());
+    }
+    
     output.status.success()
 }
 
