@@ -1,4 +1,5 @@
 use clap::Arg;
+use inquire::Select;
 use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 use std::env;
 use std::str;
@@ -102,6 +103,21 @@ fn multi_select(options: Vec<git::GitBranch>, path: &str) {
                 git::delete_git_branch(path, branch_name);
             });
         }
+        Err(e) => match e {
+            inquire::InquireError::OperationInterrupted => {
+                println!("user canceled");
+            }
+            _ => println!("Error: {:?}", e),
+        },
+    }
+}
+
+// 체크 아웃 하기 위해 브랜치 선택 하는 코드
+fn select_branch(branch_names: Vec<&str>) {
+    let ans = Select::new("Please select the branch to check out.", branch_names).prompt();
+
+    match ans {
+        Ok(choice) => println!("{}! That's mine too!", choice), //TODO: git checkout 하는 코드 작성
         Err(e) => match e {
             inquire::InquireError::OperationInterrupted => {
                 println!("user canceled");
