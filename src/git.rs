@@ -16,6 +16,18 @@ impl Display for GitBranch {
     }
 }
 
+pub fn checkout(path: &str, branch_name:&str) -> bool {
+    let output = Command::new("git")
+        .current_dir(path)
+        .arg("checkout")
+        .arg(branch_name)
+        .output()
+        .expect("failed to execute process");
+    output.status.success()
+}
+
+
+
 pub fn check_git_exist(path: &str) -> bool {
     let output = Command::new("git")
         .current_dir(path)
@@ -38,6 +50,20 @@ pub fn delete_git_branch(path: &str, branch: &str) -> bool {
     }
     
     output.status.success()
+}
+
+pub fn get_local_branches(path: &str) -> Vec<String> {
+    let output = Command::new("git")
+        .current_dir(path)
+        .arg("branch")
+        .output()
+        .expect("failed to execute process");
+    let git_branches: Vec<String> = String::from_utf8(output.stdout)
+        .unwrap()
+        .lines()
+        .map(|line| line[2..].to_string())
+        .collect();
+    git_branches
 }
 
 

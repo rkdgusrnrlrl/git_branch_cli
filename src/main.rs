@@ -71,10 +71,15 @@ fn main() {
         }
         Some(("branch", sub_matches)) => {
             let new = sub_matches.get_one::<String>("new_branch");
+
             println!("branche!!");
             match new {
                 Some(branch) => println!("New branch name: {}", branch),
-                None => println!("None"),
+                None => {
+                    let path = &String::from(".");
+                    let branches = git::get_local_branches(path);
+                    select_branch(path, branches);
+                }
             }
         }
         _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
@@ -113,11 +118,14 @@ fn multi_select(options: Vec<git::GitBranch>, path: &str) {
 }
 
 // 체크 아웃 하기 위해 브랜치 선택 하는 코드
-fn select_branch(branch_names: Vec<&str>) {
+fn select_branch(path: &str, branch_names: Vec<String>) {
     let ans = Select::new("Please select the branch to check out.", branch_names).prompt();
 
     match ans {
-        Ok(choice) => println!("{}! That's mine too!", choice), //TODO: git checkout 하는 코드 작성
+        Ok(choice) => {
+            let is_done = git::checkout(path, choice.as_str());
+            println!("done {}", is_done)  
+        },
         Err(e) => match e {
             inquire::InquireError::OperationInterrupted => {
                 println!("user canceled");
