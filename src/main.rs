@@ -1,3 +1,4 @@
+use clap::Arg;
 use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 use std::env;
 use std::str;
@@ -20,6 +21,11 @@ fn cli() -> Command {
                 .about("recommend stage or release branch name")
                 .arg(arg!(<STAGE> "stage"))
                 .arg_required_else_help(true),
+        )
+        .subcommand(
+            Command::new("branch")
+                .about("branch list")
+                .arg(Arg::new("branch").long("branch")),
         )
 }
 
@@ -64,6 +70,9 @@ fn main() {
             }
             let git_branches = git::get_branches(&absolut_path);
             multi_select(git_branches, &absolut_path);
+        }
+        Some(("branch", _sub_matches)) => {
+            println!("branche!!")
         }
         _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
     }
