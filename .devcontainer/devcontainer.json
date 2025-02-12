@@ -1,0 +1,19 @@
+{
+  "name": "Rust DevContainer",
+  "image": "mcr.microsoft.com/devcontainers/rust:latest",
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "latest"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "bungcip.better-toml",
+        "serayuzgur.crates"
+      ]
+    }
+  },
+  "postCreateCommand": "cargo install cargo-watch"
+}
