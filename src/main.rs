@@ -3,8 +3,8 @@ use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 use std::env;
 use std::str;
 mod git;
-use clap::{arg, Command};
 use chrono::{DateTime, Local};
+use clap::{arg, Command};
 
 fn cli() -> Command {
     Command::new("git")
@@ -12,10 +12,7 @@ fn cli() -> Command {
         .subcommand_required(true)
         .arg_required_else_help(true)
         .allow_external_subcommands(true)
-        .subcommand(
-            Command::new("delete")
-                .about("Delete Local Branch"),
-        )
+        .subcommand(Command::new("delete").about("Delete Local Branch"))
         .subcommand(
             Command::new("recommend")
                 .about("recommend stage or release branch name")
@@ -23,9 +20,12 @@ fn cli() -> Command {
                 .arg_required_else_help(true),
         )
         .subcommand(
-            Command::new("branch")
-                .about("branch list")
-                .arg(Arg::new("branch").long("branch")),
+            Command::new("branch").about("branch list").arg(
+                Arg::new("new_branch")
+                    .short('n')
+                    .long("new")
+                    .help("new branch"),
+            ),
         )
 }
 
@@ -43,10 +43,7 @@ fn main() {
                 stage = stage,
                 yymmdd = yymmdd
             );
-            let branch_name = git::get_remote_last_branch(
-                &absolut_path, 
-                filter_format.as_str()
-            );
+            let branch_name = git::get_remote_last_branch(&absolut_path, filter_format.as_str());
             match branch_name {
                 Some(branch_name) => {
                     let new_branch_name = branch_name.replace("refs/heads/", "");
@@ -54,7 +51,7 @@ fn main() {
                     let mut sub_ver: i32 = version_parts[1].to_string().parse().unwrap();
                     sub_ver += 1;
                     println!("branch_name: {}.{}", version_parts[0], sub_ver)
-                },
+                }
                 None => {
                     let now: DateTime<Local> = Local::now();
                     let yymmdd = now.format("%Y%m%d");
@@ -71,8 +68,13 @@ fn main() {
             let git_branches = git::get_branches(&absolut_path);
             multi_select(git_branches, &absolut_path);
         }
-        Some(("branch", _sub_matches)) => {
-            println!("branche!!")
+        Some(("branch", sub_matches)) => {
+            let new = sub_matches.get_one::<String>("new_branch");
+            println!("branche!!");
+            match new {
+                Some(branch) => println!("New branch name: {}", branch),
+                None => println!("None"),
+            }
         }
         _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
     }
@@ -85,9 +87,9 @@ fn get_absolute_path(path: &String) -> String {
     absolut_path
 }
 
-
 fn multi_select(options: Vec<git::GitBranch>, path: &str) {
-    let formatter: MultiOptionFormatter<git::GitBranch> = &|a| format!("{} selected branch", a.len());
+    let formatter: MultiOptionFormatter<git::GitBranch> =
+        &|a| format!("{} selected branch", a.len());
 
     let ans = MultiSelect::new("Select branch list to delete:", options)
         .with_formatter(formatter)
@@ -100,13 +102,11 @@ fn multi_select(options: Vec<git::GitBranch>, path: &str) {
                 git::delete_git_branch(path, branch_name);
             });
         }
-        Err(e) => {
-            match e {
-                inquire::InquireError::OperationInterrupted => {
-                    println!("user canceled");
-                }
-                _ => println!("Error: {:?}", e),
+        Err(e) => match e {
+            inquire::InquireError::OperationInterrupted => {
+                println!("user canceled");
             }
-        }
+            _ => println!("Error: {:?}", e),
+        },
     }
 }
