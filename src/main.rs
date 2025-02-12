@@ -6,6 +6,24 @@ use std::str;
 mod git;
 use chrono::{DateTime, Local};
 use clap::{arg, Command};
+use std::fmt;
+
+#[derive(Debug)]
+enum SelectBranchError {
+    UserCanceled,
+    OtherError(String),
+}
+
+// ✅ `fmt::Display` 구현 (에러 메시지 출력 가능)
+impl fmt::Display for SelectBranchError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            SelectBranchError::UserCanceled => write!(f, "User canceled the operation."),
+            SelectBranchError::OtherError(msg) => write!(f, "An error occurred: {}", msg),
+        }
+    }
+}
+
 
 fn cli() -> Command {
     Command::new("git")
@@ -78,7 +96,9 @@ fn main() {
                 None => {
                     let path = &String::from(".");
                     let branches = git::get_local_branches(path);
-                    select_branch(path, branches);
+                    let selected_branch = select_branch(path, branches).unwrap();
+                    git::checkout(path, &selected_branch);
+                    println!("done")
                 }
             }
         }
@@ -118,19 +138,18 @@ fn multi_select(options: Vec<git::GitBranch>, path: &str) {
 }
 
 // 체크 아웃 하기 위해 브랜치 선택 하는 코드
-fn select_branch(path: &str, branch_names: Vec<String>) {
+fn select_branch(path: &str, branch_names: Vec<String>) -> Result<String, SelectBranchError> {
     let ans = Select::new("Please select the branch to check out.", branch_names).prompt();
 
     match ans {
         Ok(choice) => {
-            let is_done = git::checkout(path, choice.as_str());
-            println!("done {}", is_done)  
+            Ok(choice)
         },
         Err(e) => match e {
             inquire::InquireError::OperationInterrupted => {
-                println!("user canceled");
+                Err(SelectBranchError::UserCanceled)
             }
-            _ => println!("Error: {:?}", e),
+            _ => Err(SelectBranchError::OtherError(e.to_string()))
         },
     }
 }
