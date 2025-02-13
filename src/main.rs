@@ -2,7 +2,6 @@ use clap::Arg;
 use git::GitClient;
 use inquire::Select;
 use inquire::{formatter::MultiOptionFormatter, MultiSelect};
-use std::env;
 use std::str;
 mod git;
 use chrono::{DateTime, Local};
@@ -54,9 +53,7 @@ fn main() {
     let git_client = GitClient::new(".");
     match matches.subcommand() {
         Some(("recommend", sub_matches)) => {
-            let path = &String::from(".");
             let stage = sub_matches.get_one::<String>("STAGE").expect("required");
-            let absolut_path = get_absolute_path(path);
             let now: DateTime<Local> = Local::now();
             let yymmdd = now.format("%Y%m%d");
             let filter_format = format!(
@@ -64,7 +61,7 @@ fn main() {
                 stage = stage,
                 yymmdd = yymmdd
             );
-            let branch_name = git::get_remote_last_branch(&absolut_path, filter_format.as_str());
+            let branch_name = git_client.get_remote_last_branch(filter_format.as_str());
             match branch_name {
                 Some(branch_name) => {
                     let new_branch_name = branch_name.replace("refs/heads/", "");
@@ -81,13 +78,11 @@ fn main() {
             }
         }
         Some(("delete", _sub_matches)) => {
-            let path = &String::from(".");
-            let absolut_path = get_absolute_path(path);
-            if !git::check_git_exist(&absolut_path) {
-                panic!("{} not a git repository", path)
+            if !git_client.check_git_exist() {
+                panic!("not a git repository")
             }
-            let git_branches = git::get_branches(&absolut_path);
-            multi_select(git_branches, &absolut_path);
+            let git_branches = git_client.get_branches();
+            multi_select(git_branches, &git_client);
         }
         Some(("branch", sub_matches)) => {
             let new = sub_matches.get_one::<String>("new_branch");
@@ -107,14 +102,7 @@ fn main() {
     }
 }
 
-fn get_absolute_path(path: &String) -> String {
-    let mut dir = env::current_dir().unwrap();
-    dir.push(path);
-    let absolut_path = String::from(dir.canonicalize().unwrap().to_str().unwrap());
-    absolut_path
-}
-
-fn multi_select(options: Vec<git::GitBranch>, path: &str) {
+fn multi_select(options: Vec<git::GitBranch>, git_client: &GitClient) {
     let formatter: MultiOptionFormatter<git::GitBranch> =
         &|a| format!("{} selected branch", a.len());
 
@@ -126,7 +114,7 @@ fn multi_select(options: Vec<git::GitBranch>, path: &str) {
         Ok(selected_branches) => {
             selected_branches.iter().for_each(|branch| {
                 let branch_name = branch.name.as_str();
-                git::delete_git_branch(path, branch_name);
+                git_client.delete_branch(branch_name);
             });
         }
         Err(e) => match e {
