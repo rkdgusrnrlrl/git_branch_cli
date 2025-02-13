@@ -1,4 +1,5 @@
 use clap::Arg;
+use git::GitClient;
 use inquire::Select;
 use inquire::{formatter::MultiOptionFormatter, MultiSelect};
 use std::env;
@@ -50,6 +51,7 @@ fn cli() -> Command {
 
 fn main() {
     let matches = cli().get_matches();
+    let git_client = GitClient::new(".");
     match matches.subcommand() {
         Some(("recommend", sub_matches)) => {
             let path = &String::from(".");
@@ -94,10 +96,9 @@ fn main() {
             match new {
                 Some(branch) => println!("New branch name: {}", branch),
                 None => {
-                    let path = &String::from(".");
-                    let branches = git::get_local_branches(path);
-                    let selected_branch = select_branch(path, branches).unwrap();
-                    git::checkout(path, &selected_branch);
+                    let branches = git_client.get_local_branches();
+                    let selected_branch = select_branch(branches).unwrap();
+                    git_client.checkout(&selected_branch);
                     println!("done")
                 }
             }
@@ -138,7 +139,7 @@ fn multi_select(options: Vec<git::GitBranch>, path: &str) {
 }
 
 // 체크 아웃 하기 위해 브랜치 선택 하는 코드
-fn select_branch(path: &str, branch_names: Vec<String>) -> Result<String, SelectBranchError> {
+fn select_branch(branch_names: Vec<String>) -> Result<String, SelectBranchError> {
     let ans = Select::new("Please select the branch to check out.", branch_names).prompt();
 
     match ans {

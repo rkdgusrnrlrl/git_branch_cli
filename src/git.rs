@@ -1,5 +1,6 @@
 use chrono::NaiveDateTime;
 use std::fmt::Display;
+use std::path::PathBuf;
 use std::process::Command;
 
 
@@ -16,15 +17,41 @@ impl Display for GitBranch {
     }
 }
 
-pub fn checkout(path: &str, branch_name:&str) -> bool {
-    let output = Command::new("git")
-        .current_dir(path)
-        .arg("checkout")
-        .arg(branch_name)
-        .output()
-        .expect("failed to execute process");
-    output.status.success()
+pub struct GitClient {
+    working_directory: PathBuf,
 }
+
+impl GitClient {
+    pub fn new(path: &str) -> Self {
+        GitClient { working_directory: PathBuf::from(path) }
+    }
+
+    pub fn get_local_branches(&self) -> Vec<String> {
+        let output = Command::new("git")
+            .current_dir(&self.working_directory)
+            .arg("branch")
+            .output()
+            .expect("failed to execute process");
+        let git_branches: Vec<String> = String::from_utf8(output.stdout)
+            .unwrap()
+            .lines()
+            .map(|line| line[2..].to_string())
+            .collect();
+        git_branches
+    }
+
+    pub fn checkout(&self, branch_name:&str) -> bool {
+        let output = Command::new("git")
+            .current_dir(&self.working_directory)
+            .arg("checkout")
+            .arg(branch_name)
+            .output()
+            .expect("failed to execute process");
+        output.status.success()
+    }
+}
+
+
 
 
 
@@ -52,19 +79,7 @@ pub fn delete_git_branch(path: &str, branch: &str) -> bool {
     output.status.success()
 }
 
-pub fn get_local_branches(path: &str) -> Vec<String> {
-    let output = Command::new("git")
-        .current_dir(path)
-        .arg("branch")
-        .output()
-        .expect("failed to execute process");
-    let git_branches: Vec<String> = String::from_utf8(output.stdout)
-        .unwrap()
-        .lines()
-        .map(|line| line[2..].to_string())
-        .collect();
-    git_branches
-}
+
 
 
 pub fn get_branches(path: &str) -> Vec<GitBranch> {
