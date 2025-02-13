@@ -82,12 +82,15 @@ fn main() {
                 panic!("not a git repository")
             }
             let git_branches = git_client.get_branches();
-            multi_select(git_branches, &git_client);
+            let selected_branches = multi_select(git_branches).expect("error");
+            
+            selected_branches.iter().for_each(|branch| {
+                git_client.delete_branch(branch.as_str());
+            });
         }
         Some(("branch", sub_matches)) => {
             let new = sub_matches.get_one::<String>("new_branch");
-
-            println!("branche!!");
+            
             match new {
                 Some(branch) => println!("New branch name: {}", branch),
                 None => {
@@ -102,7 +105,7 @@ fn main() {
     }
 }
 
-fn multi_select(options: Vec<git::GitBranch>, git_client: &GitClient) {
+fn multi_select(options: Vec<git::GitBranch>) -> Result<Vec<String>, SelectBranchError> {
     let formatter: MultiOptionFormatter<git::GitBranch> =
         &|a| format!("{} selected branch", a.len());
 
@@ -112,16 +115,13 @@ fn multi_select(options: Vec<git::GitBranch>, git_client: &GitClient) {
 
     match ans {
         Ok(selected_branches) => {
-            selected_branches.iter().for_each(|branch| {
-                let branch_name = branch.name.as_str();
-                git_client.delete_branch(branch_name);
-            });
+            Ok(selected_branches.iter().map(|branch| branch.name.clone()).collect())
         }
         Err(e) => match e {
             inquire::InquireError::OperationInterrupted => {
-                println!("user canceled");
+                Err(SelectBranchError::UserCanceled)
             }
-            _ => println!("Error: {:?}", e),
+            _ => Err(SelectBranchError::OtherError(e.to_string()))
         },
     }
 }

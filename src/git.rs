@@ -87,22 +87,22 @@ impl GitClient {
             .output()
             .expect("failed to execute process");
 
-        let git_branches: Vec<GitBranch> = String::from_utf8(output.stdout)
-            .unwrap()
-            .lines()
-            .map(|line| line.trim_start_matches('\'').trim_end_matches('\''))
-            .map(|line| json::parse(line).unwrap())
-            .map(|value| GitBranch {
-                name: value["name"].to_string(),
-                committerdate: NaiveDateTime::parse_from_str(
-                    &value["committerdate"].to_string(),
-                    "%Y-%m-%d %H:%M:%S %z",
-                )
-                .expect("failed to parse date"),
-            })
-            .collect();
-        git_branches
-    }
+    let git_branches: Vec<GitBranch> = String::from_utf8(output.stdout)
+        .unwrap()
+        .lines()
+        .map(|line| line.trim_start_matches('\'').trim_end_matches('\''))
+        .map(|line| json::parse(line).unwrap())
+        .map(|value| GitBranch {
+            name: value["name"].to_string(),
+            committerdate: NaiveDateTime::parse_from_str(
+                &value["committerdate"].to_string(),
+                "%Y-%m-%d %H:%M:%S %z",
+            )
+            .expect("failed to parse date"),
+        })
+        .collect();
+    git_branches
+}
 
     pub fn get_remote_last_branch(&self, filter_format: &str) -> Option<String> {
         let output = Command::new("git")
