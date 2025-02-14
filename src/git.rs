@@ -26,6 +26,17 @@ impl GitClient {
         GitClient { working_directory: PathBuf::from(path) }
     }
 
+    pub fn checkout_new_branch(&self, branch_name:&str) -> bool {
+        let output = Command::new("git")
+            .current_dir(&self.working_directory)
+            .arg("checkout")
+            .arg("-b")
+            .arg(branch_name)
+            .output()
+            .expect("failed to execute process");
+        output.status.success()
+    }
+
     pub fn get_local_branches(&self) -> Vec<String> {
         let output = Command::new("git")
             .current_dir(&self.working_directory)

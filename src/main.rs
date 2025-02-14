@@ -92,7 +92,10 @@ fn main() {
             let new = sub_matches.get_one::<String>("new_branch");
             
             match new {
-                Some(branch) => println!("New branch name: {}", branch),
+                Some(branch) => {
+                    git_client.checkout_new_branch(branch);
+                    println!("done")
+                },
                 None => {
                     let branches = git_client.get_local_branches();
                     let selected_branch = select_branch(branches).unwrap();
