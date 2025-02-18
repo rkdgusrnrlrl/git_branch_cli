@@ -98,22 +98,22 @@ impl GitClient {
             .output()
             .expect("failed to execute process");
 
-    let git_branches: Vec<GitBranch> = String::from_utf8(output.stdout)
-        .unwrap()
-        .lines()
-        .map(|line| line.trim_start_matches('\'').trim_end_matches('\''))
-        .map(|line| json::parse(line).unwrap())
-        .map(|value| GitBranch {
-            name: value["name"].to_string(),
-            committerdate: NaiveDateTime::parse_from_str(
-                &value["committerdate"].to_string(),
-                "%Y-%m-%d %H:%M:%S %z",
-            )
-            .expect("failed to parse date"),
-        })
-        .collect();
-    git_branches
-}
+        let git_branches: Vec<GitBranch> = String::from_utf8(output.stdout)
+            .unwrap()
+            .lines()
+            .map(|line| line.trim_start_matches('\'').trim_end_matches('\''))
+            .map(|line| json::parse(line).unwrap())
+            .map(|value| GitBranch {
+                name: value["name"].to_string(),
+                committerdate: NaiveDateTime::parse_from_str(
+                    &value["committerdate"].to_string(),
+                    "%Y-%m-%d %H:%M:%S %z",
+                )
+                .expect("failed to parse date"),
+            })
+            .collect();
+        git_branches
+    }
 
     pub fn get_remote_last_branch(&self, filter_format: &str) -> Option<String> {
         let output = Command::new("git")
@@ -132,5 +132,29 @@ impl GitClient {
         } else {
             None
         }
+    }
+
+    // 추가: 수정된 파일 목록 조회 (git ls-files -m)
+    pub fn get_modified_files(&self) -> Vec<String> {
+        let output = Command::new("git")
+            .current_dir(&self.working_directory)
+            .args(["ls-files", "-m"])
+            .output()
+            .expect("failed to execute process");
+        if !output.status.success() {
+            return vec![];
+        }
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        stdout.lines().map(|s| s.to_string()).collect()
+    }
+
+    // 추가: 선택한 파일을 원래대로 복원 (git restore)
+    pub fn restore_file(&self, file: &str) -> bool {
+        let output = Command::new("git")
+            .current_dir(&self.working_directory)
+            .args(["restore", file])
+            .output()
+            .expect("failed to execute process");
+        output.status.success()
     }
 }

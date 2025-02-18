@@ -32,6 +32,7 @@ fn cli() -> Command {
         .arg_required_else_help(true)
         .allow_external_subcommands(true)
         .subcommand(Command::new("delete").about("Delete Local Branch"))
+        .subcommand(Command::new("revert").about("revert selected files"))
         .subcommand(
             Command::new("recommend")
                 .about("recommend stage or release branch name")
@@ -104,6 +105,14 @@ fn main() {
                 }
             }
         }
+        Some(("revert", _)) => {
+            let files = git_client.get_modified_files();
+            let selected_files = multi_select_str(files).unwrap();
+            selected_files.iter().for_each(|f| {
+                let is_ok = git_client.restore_file(f);
+                println!("{}: {}",f, is_ok)
+            })
+        }
         _ => unreachable!(), // If all subcommands are defined above, anything else is unreachable!()
     }
 }
@@ -119,6 +128,23 @@ fn multi_select(options: Vec<git::GitBranch>) -> Result<Vec<String>, SelectBranc
     match ans {
         Ok(selected_branches) => {
             Ok(selected_branches.iter().map(|branch| branch.name.clone()).collect())
+        }
+        Err(e) => match e {
+            inquire::InquireError::OperationInterrupted => {
+                Err(SelectBranchError::UserCanceled)
+            }
+            _ => Err(SelectBranchError::OtherError(e.to_string()))
+        },
+    }
+}
+
+fn multi_select_str(options: Vec<String>) -> Result<Vec<String>, SelectBranchError> {
+    let ans = MultiSelect::new("Select file list to restore:", options)
+        .prompt();
+
+    match ans {
+        Ok(selected_files) => {
+            Ok(selected_files)
         }
         Err(e) => match e {
             inquire::InquireError::OperationInterrupted => {
